@@ -43,11 +43,15 @@ def paragraph_score(par):
   return score/(len(split_sent)-1)
 
 data_df = pd.read_csv('data/startribune_paragraph.csv')
-first_article_df = data_df[data_df.article == 8165]
-merged_df = pd.concat([first_article_df, first_article_df.shift(-1).add_prefix('next_')['next_text']], axis=1)
+#first_article_df = data_df[data_df.article == 8465]
+data_df = data_df.loc[:,'site_id':'Clout']
+data_df['num_sent'] = data_df['text'].apply(lambda x: len(tokenize.sent_tokenize(x)))
+data_df = data_df[data_df.num_sent > 1]
+
+merged_df = pd.concat([data_df, data_df.shift(-1).add_prefix('next_')[['next_article','next_text']]], axis=1)
 # convert types
 merged_df["text"]= merged_df["text"].astype(str)
-
+# again, make sure we're only working with paragraphs with more than 2 sentences...
 merged_df['last_sentence'] = merged_df['text'].apply(lambda x: tokenize.sent_tokenize(x)[-1])
 merged_df['second_last_sentence'] = merged_df['text'].apply(lambda x: tokenize.sent_tokenize(x)[-2])
 merged_df = merged_df[:-1]
@@ -58,4 +62,4 @@ merged_df['last_first_score'] = merged_df[['last_sentence','first_sentence']].ap
 merged_df['sec_last_first_score'] = merged_df[['second_last_sentence','first_sentence']].apply(lambda x: sentence_pred(*x), axis=1)
 merged_df['sec_last_second_score'] = merged_df[['second_last_sentence','second_sentence']].apply(lambda x: sentence_pred(*x), axis=1)
 merged_df['last_second_score'] = merged_df[['last_sentence','second_sentence']].apply(lambda x: sentence_pred(*x), axis=1)
-merged_df.to_csv('data/par_sent_combo_outputs.csv')
+merged_df.to_csv('data/par_sent_combo_outputs_overall.csv')
